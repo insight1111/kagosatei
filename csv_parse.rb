@@ -91,7 +91,7 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
     temp[:name]=name[0]
     temp[:shinryouka]=shinryouka[0]
     _seikyu << temp
-
+    
     top=current
     resultSheet.cells(current,1).value="4月"
     resultSheet.cells(current,2).value= #入外
