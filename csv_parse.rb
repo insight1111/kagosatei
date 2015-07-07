@@ -81,6 +81,7 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
       hosei=(line..endline).inject("") do |m,l|
         m=m+(sh.cells(l,28).value+"\n" rescue "\n")
       end.chomp.chomp
+      # TODO: 事由が一部ずれて表示される（縦位置が合わない）
       jiyu=[]
       (line..endline).map.with_index(0) do |l,i|
         jiyu << [sh.cells(l,24).value,i] if sh.cells(l,24).value
@@ -88,13 +89,14 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
       kensa=(line..endline).inject(0) do |m,l|
         m=m+sh.cells(l,20).value.to_i
       end
-      seikyutemp << {seikyu: seikyu, hosei: hosei, jiyu: jiyu, zougen: sh.cells(group[j],tensu_col).value.to_i, kensa: kensa} # p "seikyu:#{seikyu}, hosei:#{hosei}\n"
+      # TODO: 増減は絶対値で（マイナスをプラスで）
+      seikyutemp << {seikyu: seikyu, hosei: hosei, jiyu: jiyu, zougen: (sh.cells(group[j],tensu_col).value.to_i).abs, kensa: kensa} # p "seikyu:#{seikyu}, hosei:#{hosei}\n"
     end
     temp={}
 
     temp[:seikyus]=seikyutemp
     temp[:name]=name[0]
-    temp[:id]=name[2]
+    temp[:id]=name[2][0..7]
     temp[:nyugai]=sh.cells(name[1],14).value[1]
     temp[:shinryouka]=shinryouka[0]
     _seikyu << temp
@@ -131,9 +133,9 @@ end
 
 # 最後に表を整形する
 resultSheet.columns("A:A").entirecolumn.autofit
-resultSheet.columns("C:C").verticalalignment=-4160
+# resultSheet.columns("C:C").verticalalignment=-4160
 resultSheet.columns("D:D").columnwidth=18
-resultSheet.columns("D:D").verticalalignment=-4107
+# resultSheet.columns("D:D").verticalalignment=-4107
 resultSheet.columns("I:J").columnwidth=55
 resultSheet.columns("I:J").verticalalignment=-4160
 resultSheet.cells.entirerow.autofit
