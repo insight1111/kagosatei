@@ -16,11 +16,11 @@ resultSheet.name="国保医科"
 
 # パース後に入れ込むヘッダー
 %w(診療月 入外 患者番号 患者氏名 診療科 検査項目 事由 増減 請求内容 補正内容).each.with_index(1) do |x,col|
-  resultSheet.cells(1,col).value=x
+  resultSheet.cells(2,col).value=x
 end
 
-# 集計資料対象は2行目から開始
-current=2
+# 集計資料対象は3行目から開始
+current=3
 last_line=sh.usedrange.rows.count
 
 # 査定CSVから○○科の部分を抽出し、その行数をストアする
@@ -52,6 +52,7 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
     temp=[]
     # まず請求内容をグループに分ける。グループの境界は
     # "合計"がなく、請求書内容が空でない行で、点数が記載されている行が区切り
+    # groupには、各グループの先頭行が入る
     goukei_col=21
     tensu_col=23
     naiyo_col=26
@@ -83,7 +84,10 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
       (line..endline).map.with_index(0) do |l,i|
         jiyu << [sh.cells(l,24).value,i] if sh.cells(l,24).value
       end
-      seikyutemp << {seikyu: seikyu, hosei: hosei, jiyu: jiyu, zougen: sh.cells(group[j],tensu_col).value.to_i} # p "seikyu:#{seikyu}, hosei:#{hosei}\n"
+      kensa=(line..endline).inject(0) do |m,l|
+        m=m+sh.cells(l,20).value.to_i
+      end
+      seikyutemp << {seikyu: seikyu, hosei: hosei, jiyu: jiyu, zougen: sh.cells(group[j],tensu_col).value.to_i, kensa: kensa} # p "seikyu:#{seikyu}, hosei:#{hosei}\n"
     end
     temp={}
 
@@ -93,28 +97,30 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
     _seikyu << temp
     
     top=current
-    resultSheet.cells(current,1).value="4月"
-    resultSheet.cells(current,2).value= #入外
-    resultSheet.cells(current,3).value=sh.cells(current,19).value #患者番号
-    resultSheet.cells(current,4).value=temp[:name]
-    resultSheet.cells(current,5).value=temp[:shinryouka]
-    resultSheet.cells(current,6).value=sh.cells(current,20).value #検査項目
+    resultSheet.cells(current,1).value = "4月"
+    resultSheet.cells(current,2).value = sh.cells(current,14).value[1] rescue "" #入外
+    resultSheet.cells(current,3).value = sh.cells(current,19).value #患者番号
+    resultSheet.cells(current,4).value = temp[:name]
+    resultSheet.cells(current,5).value = temp[:shinryouka]
     temp[:seikyus].each do |_shinryouka|
       _jiyu=[]
       _shinryouka[:jiyu].each{|x| _jiyu[x[1]]=x[0]}
       _jiyu=_jiyu.join("\n")
-      resultSheet.cells(current,7).value=_jiyu
-      resultSheet.cells(current,8).value=_shinryouka[:zougen]
-      resultSheet.cells(current,9).value=_shinryouka[:seikyu]
-      resultSheet.cells(current,10).value=_shinryouka[:hosei]
+      resultSheet.cells(current,6).value  = _shinryouka[:kensa] #検査項目
+      resultSheet.cells(current,7).value  = _jiyu
+      resultSheet.cells(current,8).value  = _shinryouka[:zougen]
+      resultSheet.cells(current,9).value  = _shinryouka[:seikyu]
+      resultSheet.cells(current,10).value = _shinryouka[:hosei]
       # byebug if current==3
       current+=1
     end
 
     # 請求内容が複数あるばあいは、セルを結合する
     if temp[:seikyus].size > 1
-      resultSheet.range(resultSheet.cells(top,1),resultSheet.cells(current-1,1)).merge
-      resultSheet.range(resultSheet.cells(top,2),resultSheet.cells(current-1,2)).merge
+      (1..5).each do |col|
+        resultSheet.range(resultSheet.cells(top,col),resultSheet.cells(current-1,col)).merge
+      end
+      # resultSheet.range(resultSheet.cells(top,2),resultSheet.cells(current-1,2)).merge
     end
     p _seikyu
   end #names
@@ -122,10 +128,11 @@ end
 
 # 最後に表を整形する
 resultSheet.columns("A:A").entirecolumn.autofit
-resultSheet.columns("E:F").columnwidth=55
-resultSheet.columns("E:F").verticalalignment=-4160
 resultSheet.columns("C:C").verticalalignment=-4160
+resultSheet.columns("D:D").columnwidth=18
 resultSheet.columns("D:D").verticalalignment=-4107
+resultSheet.columns("I:J").columnwidth=55
+resultSheet.columns("I:J").verticalalignment=-4160
 resultSheet.cells.entirerow.autofit
 resultBook.saveAs filename: 'c:\temp\H2604集計結果.xlsx'.encode('cp932')
 resultBook.close
