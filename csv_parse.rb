@@ -89,7 +89,6 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
       kensa=(line..endline).inject(0) do |m,l|
         m=m+sh.cells(l,20).value.to_i
       end
-      # TODO: 増減は絶対値で（マイナスをプラスで）
       seikyutemp << {seikyu: seikyu, hosei: hosei, jiyu: jiyu, zougen: (sh.cells(group[j],tensu_col).value.to_i).abs, kensa: kensa} # p "seikyu:#{seikyu}, hosei:#{hosei}\n"
     end
     temp={}
@@ -135,7 +134,7 @@ end
 resultSheet.columns("A:A").entirecolumn.autofit
 # resultSheet.columns("C:C").verticalalignment=-4160
 resultSheet.columns("D:D").columnwidth=18
-# resultSheet.columns("D:D").verticalalignment=-4107
+resultSheet.columns("G:G").verticalalignment=-4160 #xlTop
 resultSheet.columns("I:J").columnwidth=55
 resultSheet.columns("I:J").verticalalignment=-4160
 resultSheet.cells.entirerow.autofit
