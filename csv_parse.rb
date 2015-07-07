@@ -42,7 +42,8 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
   # 各診療科の範囲内で患者名を抽出。その行数をストアする
   # names=[[患者名, その開始行,ID],...]
   names=(shinryouka[1]+2.._shinryoukas[i+1][1]-1).inject([]) do |m,line|
-    m << [sh.cells(line,name_col).value, line, sh.cells(line, 19).value] if sh.cells(line,name_col).value
+    m << 
+      [sh.cells(line,name_col).value, line, sh.cells(line, 19).value] if sh.cells(line,name_col).value
     m
   end
 
@@ -58,7 +59,9 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
     tensu_col=23
     naiyo_col=26
     group=(name[1].._names[i+1][1]-1).inject([]) do |m,line|
-      next m if sh.cells(line,naiyo_col).value==nil || sh.cells(line,goukei_col).value=="合計".encode("cp932") || sh.cells(line,tensu_col).value==nil
+      next m if sh.cells(line,naiyo_col).value==nil || 
+        sh.cells(line,goukei_col).value=="合計".encode("cp932") || 
+        sh.cells(line,tensu_col).value==nil
       m << line
     end
     p group
@@ -81,7 +84,6 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
       hosei=(line..endline).inject("") do |m,l|
         m=m+(sh.cells(l,28).value+"\n" rescue "\n")
       end.chomp.chomp
-      # TODO: 事由が一部ずれて表示される（縦位置が合わない）
       jiyu=[]
       (line..endline).map.with_index(0) do |l,i|
         jiyu << [sh.cells(l,24).value,i] if sh.cells(l,24).value
@@ -89,7 +91,14 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
       kensa=(line..endline).inject(0) do |m,l|
         m=m+sh.cells(l,20).value.to_i
       end
-      seikyutemp << {seikyu: seikyu, hosei: hosei, jiyu: jiyu, zougen: (sh.cells(group[j],tensu_col).value.to_i).abs, kensa: kensa} # p "seikyu:#{seikyu}, hosei:#{hosei}\n"
+      seikyutemp << 
+        {
+          seikyu: seikyu,
+           hosei: hosei,
+            jiyu: jiyu,
+          zougen: (sh.cells(group[j],tensu_col).value.to_i).abs,
+           kensa: kensa
+        }
     end
     temp={}
 
@@ -119,20 +128,18 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
       current+=1
     end
 
-    # 請求内容が複数あるばあいは、それ以外のセルを結合する
+    # 請求内容が複数ある場合は、それ以外のセルを結合する
     if temp[:seikyus].size > 1
       (1..5).each do |col|
         resultSheet.range(resultSheet.cells(top,col),resultSheet.cells(current-1,col)).merge
       end
-      # resultSheet.range(resultSheet.cells(top,2),resultSheet.cells(current-1,2)).merge
     end
     p _seikyu
   end #names
-end
+end #shinryoukas
 
 # 最後に表を整形する
 resultSheet.columns("A:A").entirecolumn.autofit
-# resultSheet.columns("C:C").verticalalignment=-4160
 resultSheet.columns("D:D").columnwidth=18
 resultSheet.columns("G:G").verticalalignment=-4160 #xlTop
 resultSheet.columns("I:J").columnwidth=55
