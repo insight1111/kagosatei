@@ -40,15 +40,15 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
   name_col=18
 
   # 各診療科の範囲内で患者名を抽出。その行数をストアする
-  # names=[[患者名, その開始行],...]
+  # names=[[患者名, その開始行,ID],...]
   names=(shinryouka[1]+2.._shinryoukas[i+1][1]-1).inject([]) do |m,line|
-    m << [sh.cells(line,name_col).value, line] if sh.cells(line,name_col).value
+    m << [sh.cells(line,name_col).value, line, sh.cells(line, 19).value] if sh.cells(line,name_col).value
     m
   end
 
   # 1患者あたりのパース範囲は名前が出てきた行から、次の名前が出てくる行-1
   # 範囲の最終行を保持する一時変数として_namesを作成
-  _names=names.dup.push([nil,_shinryoukas[i+1][1]-1])
+  _names=names.dup.push([nil,_shinryoukas[i+1][1]-1, nil])
   names.each.with_index(0) do |name,i|
     temp=[]
     # まず請求内容をグループに分ける。グループの境界は
@@ -94,17 +94,15 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
 
     temp[:seikyus]=seikyutemp
     temp[:name]=name[0]
+    temp[:id]=name[2]
+    temp[:nyugai]=sh.cells(name[1],14).value[1]
     temp[:shinryouka]=shinryouka[0]
     _seikyu << temp
     
-    # FIXME: 患者番号が一患者一番号になっていない
-    # FIXME: 入院・外来が一患者一項目になっていない
-    # ↑いずれも、原本のセルの並び順通りに間が開いている
-    # FIXME: 検査項目で0がある
     top=current
     resultSheet.cells(current,1).value = "4月"
-    resultSheet.cells(current,2).value = sh.cells(current,14).value[1] rescue "" #入外
-    resultSheet.cells(current,3).value = sh.cells(current,19).value #患者番号
+    resultSheet.cells(current,2).value = temp[:nyugai] #入外
+    resultSheet.cells(current,3).value = temp[:id] #患者番号
     resultSheet.cells(current,4).value = temp[:name]
     resultSheet.cells(current,5).value = temp[:shinryouka]
     temp[:seikyus].each do |_shinryouka|
@@ -120,7 +118,7 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
       current+=1
     end
 
-    # 請求内容が複数あるばあいは、セルを結合する
+    # 請求内容が複数あるばあいは、それ以外のセルを結合する
     if temp[:seikyus].size > 1
       (1..5).each do |col|
         resultSheet.range(resultSheet.cells(top,col),resultSheet.cells(current-1,col)).merge
