@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+# TODO: 最終的には複数ファイルを一度にパースできるようにする
 require "win32ole"
 require "byebug"
 
@@ -96,6 +97,10 @@ shinryoukas.map.with_index(0) do |shinryouka,i|
     temp[:shinryouka]=shinryouka[0]
     _seikyu << temp
     
+    # FIXME: 患者番号が一患者一番号になっていない
+    # FIXME: 入院・外来が一患者一項目になっていない
+    # ↑いずれも、原本のセルの並び順通りに間が開いている
+    # FIXME: 検査項目で0がある
     top=current
     resultSheet.cells(current,1).value = "4月"
     resultSheet.cells(current,2).value = sh.cells(current,14).value[1] rescue "" #入外
