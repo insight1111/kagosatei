@@ -8,13 +8,17 @@ require "byebug"
 
 basedir=File.expand_path(File.dirname(__FILE__))
 
-# @resultBookはパース後のbook
-@resultBook=@ex.workbooks.add
 
+
+
+# make_satei
+# ブックをパースして査定情報を抽出、整形する
+#
+# book: 対象のbook
+# satei_dantai: 国保、社保などの区分情報
 
 def make_satei(book,satei_dantai)
   # bookは査定CSV
-  # book=@ex.workbooks.open("C:/projects/kagosatei/H2604国保医科.csv")
   sh=book.sheets(1)
 
   resultSheet=@resultBook.worksheets.add
@@ -115,7 +119,7 @@ def make_satei(book,satei_dantai)
       _seikyu << temp
       
       top=current
-      resultSheet.cells(current,1).value = "4月"
+      resultSheet.cells(current,1).value = "#{@tsuki}月"
       resultSheet.cells(current,2).value = temp[:nyugai] #入外
       resultSheet.cells(current,3).value = temp[:id] #患者番号
       resultSheet.cells(current,4).value = temp[:name]
@@ -151,23 +155,36 @@ def make_satei(book,satei_dantai)
   resultSheet.columns("I:J").verticalalignment=-4160
   resultSheet.cells.entirerow.autofit
 end #make_satei
+
+# save_and_close_book
+# パースした結果を保存する
 def save_and_close_book
-  @resultBook.saveAs filename: 'c:\temp\H2604集計結果.xlsx'.encode('cp932')
+
+  @resultBook.saveAs filename: "c:\\temp\\#{@nendo}#{@tsuki}集計結果.xlsx".encode('cp932')
   @resultBook.close
   # book.close
   @ex.quit
 end
 
+@nendo=0
+@tsuki=0
 # TODO: 月数がずれていけるように
-%w(社保医科 社保DPC 国保医科 国保DPC).each do |satei_dantai|
-  filename=basedir+"/*"+satei_dantai+".csv"
-  Dir.glob(filename) do |file|
-    book=@ex.workbooks.open(:filename => file, :readonly => true)
-    puts book.name.encode('utf-8')
-    
-    make_satei(book,satei_dantai)
-    book.close
+# %w(04 05 06 07 08 09 10 11 12 01 02 03).each do |month|
+  # @resultBookはパース後のbook
+  @resultBook=@ex.workbooks.add
+  %w(社保医科 社保DPC 国保医科 国保DPC).each do |satei_dantai|
+    filename=basedir+"/*#{satei_dantai}.csv"
+    Dir.glob(filename) do |file|
+      matchdata=File.basename(file, ".*").match(/^(H\d\d)(\d\d)/)
+      @nendo=matchdata[1]
+      @tsuki=matchdata[2]
+      p @nendo, @tsuki
+      book=@ex.workbooks.open(:filename => file, :readonly => true)
+      puts book.name.encode('utf-8')
+      
+      make_satei(book,satei_dantai)
+      book.close
+    end
   end
-end
-save_and_close_book
-
+  save_and_close_book
+# end
